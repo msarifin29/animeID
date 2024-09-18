@@ -1,16 +1,18 @@
-# app
+# Anime ID 🌍📱
 
-A new Flutter project.
+Anime ID is an open-source Flutter application demonstrating how to integrate and interact with a GraphQL API in a Flutter app. The app uses [AniList](https://github.com/AniList/ApiV2-GraphQL-Docs) a popular open-source GraphQL API to fetch data and display it in the app. The project is designed for developers who want to learn how to use GraphQL in Flutter.
 
-## Getting Started
+## Table of Contents
+- [Features](#features)
+- [Tech Stack](#tech-stack)
 
-This project is a starting point for a Flutter application.
+## Features
+- 📡 Fetch data using GraphQL queries.
+- 🗺️ Display genre list, series list and more.
+- 🔍 Interactive user interface powered by Flutter.
+- 🚀 Easy integration with any GraphQL API.
+- 💡 Fully documented, open-source project for learning and contributing.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Tech Stack
+- **Flutter** - Cross-platform mobile framework.
+- **GraphQL** - Query language for APIs.
