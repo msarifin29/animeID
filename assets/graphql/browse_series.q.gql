@@ -1,0 +1,46 @@
+query (
+  $page: Int,
+  $perPage: Int,
+  $type: MediaType,
+  $format: MediaFormat,
+  $season: MediaSeason,
+  $genres: [String],
+  $genresExclude: [String],
+  $isAdult: Boolean = true, # Assign default value if isAdult is not included in our query variables 
+  $sort: [MediaSort],
+  $search: String
+) {
+  Page (page: $page, perPage: $perPage) {
+    pageInfo {
+      total
+      perPage
+      currentPage
+      lastPage
+      hasNextPage
+    }
+    media (
+      season: $season,
+      type: $type,
+      format: $format,
+      genre_in: $genres,
+      genre_not_in: $genresExclude,
+      isAdult: $isAdult,
+      sort: $sort,
+      search: $search,
+    ) {
+      id
+      title {
+        userPreferred
+      }
+      genres
+      averageScore
+      popularity
+      season
+      description
+      synonyms
+        coverImage {
+          medium
+        }
+    }
+  }
+}
