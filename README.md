@@ -16,3 +16,5 @@ Anime ID is an open-source Flutter application demonstrating how to integrate an
 ## Tech Stack
 - **Flutter** - Cross-platform mobile framework.
 - **GraphQL** - Query language for APIs.
+
+<img src="https://github.com/msarifin29/animeID/blob/master/image.jpg" width="200" height="500" />
