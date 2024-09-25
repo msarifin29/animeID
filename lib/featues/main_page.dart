@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
@@ -17,9 +18,8 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  final genres = getIt<GenreCollectionCubit>();
   final series = getIt<BrowseSeriesCubit>();
-
+  final genres = getIt<GenreCollectionCubit>();
   final currentpage = ValueNotifier<int>(1);
   final input = TextEditingController();
 
@@ -29,7 +29,6 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void initState() {
-    genres.init();
     _pagingController.addPageRequestListener((pageKey) {
       currentpage.value = pageKey;
 
@@ -63,6 +62,21 @@ class _MainPageState extends State<MainPage> {
                       _pagingController.refresh();
                     },
                   ),
+                  IconButton(
+                      onPressed: () async {
+                        genres.init();
+                        final g = await bs(context: context, genres: genres);
+                        if (g == null || g.isEmpty) return;
+                        param = const BrowseSeriesRepositoriesParam();
+                        param = param.copyWith(genres: g);
+                        _pagingController.itemList = [];
+                        _pagingController.appendPage([], 1);
+                        _pagingController.refresh();
+                      },
+                      icon: const Icon(
+                        Icons.menu_open_rounded,
+                        size: 50,
+                      )),
                 ],
               ),
               SizedBox(
@@ -137,4 +151,82 @@ class BrowseSeriesInputWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<List<String>?> bs({
+  required BuildContext context,
+  required GenreCollectionCubit genres,
+}) async {
+  final selectedChoices = ValueNotifier<List<String>>([]);
+
+  void onSelected(String choice) {
+    final newSelectedChoices = selectedChoices.value;
+    if (selectedChoices.value.contains(choice)) {
+      selectedChoices.value.remove(choice); // Deselect if already selected
+    } else {
+      selectedChoices.value.add(choice); // Select if not selected
+    }
+    selectedChoices.value = List.from(newSelectedChoices);
+  }
+
+  return await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) {
+      return BlocProvider.value(
+        value: genres,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              BlocBuilder<GenreCollectionCubit, GenreCollectionState>(
+                builder: (context, state) {
+                  return state.when(
+                    initial: () => const SizedBox(),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    failure: (message) => Center(child: Text(message)),
+                    success: (data) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        child: ValueListenableBuilder(
+                          valueListenable: selectedChoices,
+                          builder: (context, v, _) {
+                            return Column(
+                              children: [
+                                Wrap(
+                                  spacing: 5,
+                                  children: data.genreCollection.map(
+                                    (e) {
+                                      return ChoiceChip(
+                                        label: Text(e),
+                                        selected:
+                                            selectedChoices.value.contains(e),
+                                        onSelected: (_) => onSelected(e),
+                                      );
+                                    },
+                                  ).toList(),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              ElevatedButton(
+                  onPressed: () =>
+                      Navigator.pop(context, selectedChoices.value),
+                  child: const Text('Submit')),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
