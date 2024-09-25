@@ -20,9 +20,11 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   final series = getIt<BrowseSeriesCubit>();
   final genres = getIt<GenreCollectionCubit>();
-  final currentpage = ValueNotifier<int>(1);
-  final input = TextEditingController();
 
+  final currentpage = ValueNotifier<int>(1);
+  final selectedGenres = ValueNotifier<List<String>>([]);
+
+  final input = TextEditingController();
   final _pagingController = PagingController<int, Media>(firstPageKey: 0);
 
   BrowseSeriesRepositoriesParam param = const BrowseSeriesRepositoriesParam();
@@ -39,6 +41,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => genres),
@@ -48,77 +51,98 @@ class _MainPageState extends State<MainPage> {
         appBar: AppBar(title: const Text('Anime ID')),
         body: SingleChildScrollView(
           physics: const NeverScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  BrowseSeriesInputWidget(
-                    controller: input,
-                    onFieldSubmitted: (v) {
-                      param = const BrowseSeriesRepositoriesParam();
-                      param = param.copyWith(search: input.text);
-                      _pagingController.itemList = [];
-                      _pagingController.appendPage([], 1);
-                      _pagingController.refresh();
-                    },
-                  ),
-                  IconButton(
-                      onPressed: () async {
-                        genres.init();
-                        final g = await bs(context: context, genres: genres);
-                        if (g == null || g.isEmpty) return;
-                        param = const BrowseSeriesRepositoriesParam();
-                        param = param.copyWith(genres: g);
-                        _pagingController.itemList = [];
-                        _pagingController.appendPage([], 1);
-                        _pagingController.refresh();
-                      },
-                      icon: const Icon(
-                        Icons.menu_open_rounded,
-                        size: 50,
-                      )),
-                ],
-              ),
-              SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.8,
-                child: BlocListener<BrowseSeriesCubit, BrowseSeriesState>(
-                  listener: (context, state) {
-                    state.maybeWhen(
-                      orElse: () {},
-                      success: (response) {
-                        if (!response.page.pageInfo.hasNextPage) {
-                          _pagingController
-                              .appendLastPage(response.page.media ?? []);
-                        } else {
-                          final nextPageKey =
-                              (_pagingController.nextPageKey ?? 1) + 1;
-                          _pagingController.appendPage(
-                            response.page.media ?? [],
-                            nextPageKey,
-                          );
-                        }
-                      },
-                    );
-                  },
-                  child: PagedListView<int, Media>(
-                    pagingController: _pagingController,
-                    physics: const BouncingScrollPhysics(),
-                    builderDelegate: PagedChildBuilderDelegate<Media>(
-                      itemBuilder: (context, media, index) {
-                        return BrowseSeriesWidget(media: media);
-                      },
-                      newPageProgressIndicatorBuilder: (context) {
-                        return const Center(child: CircularProgressIndicator());
-                      },
-                      firstPageProgressIndicatorBuilder: (context) {
-                        return const Center(child: CircularProgressIndicator());
-                      },
+          child: ValueListenableBuilder(
+              valueListenable: selectedGenres,
+              builder: (context, v, _) {
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        BrowseSeriesInputWidget(
+                          controller: input,
+                          onFieldSubmitted: (v) {
+                            if (input.text.isEmpty) return;
+                            param = const BrowseSeriesRepositoriesParam();
+                            param = param.copyWith(search: input.text);
+                            _pagingController.itemList = [];
+                            _pagingController.appendPage([], 1);
+                            _pagingController.refresh();
+                          },
+                        ),
+                        IconButton(
+                          onPressed: () async {
+                            genres.init();
+                            input.clear();
+                            final g = await bs(context: context, genres: genres);
+                            if (g == null || g.isEmpty) return;
+                            selectedGenres.value = g;
+                            param = const BrowseSeriesRepositoriesParam();
+                            param = param.copyWith(genres: g);
+                            _pagingController.itemList = [];
+                            _pagingController.appendPage([], 1);
+                            _pagingController.refresh();
+                          },
+                          icon: const Icon(Icons.menu_open_rounded, size: 50),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+                    selectedGenres.value.isEmpty
+                        ? const SizedBox.shrink()
+                        : SizedBox(
+                            width: double.infinity,
+                            height: kToolbarHeight - 20,
+                            child: ListView.builder(
+                              itemCount: selectedGenres.value.length,
+                              scrollDirection: Axis.horizontal,
+                              itemBuilder: (context, i) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                                  child: Chip(
+                                    label: Text(selectedGenres.value[i]),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                    SizedBox(
+                      height: selectedGenres.value.isEmpty ? size.height * 0.8 : size.height * 0.75,
+                      child: BlocListener<BrowseSeriesCubit, BrowseSeriesState>(
+                        listener: (context, state) {
+                          state.maybeWhen(
+                            orElse: () {},
+                            success: (response) {
+                              if (!response.page.pageInfo.hasNextPage) {
+                                _pagingController.appendLastPage(response.page.media ?? []);
+                              } else {
+                                final nextPageKey = (_pagingController.nextPageKey ?? 1) + 1;
+                                _pagingController.appendPage(
+                                  response.page.media ?? [],
+                                  nextPageKey,
+                                );
+                              }
+                            },
+                          );
+                        },
+                        child: PagedListView<int, Media>(
+                          pagingController: _pagingController,
+                          physics: const BouncingScrollPhysics(),
+                          builderDelegate: PagedChildBuilderDelegate<Media>(
+                            itemBuilder: (context, media, index) {
+                              return BrowseSeriesWidget(media: media);
+                            },
+                            newPageProgressIndicatorBuilder: (context) {
+                              return const Center(child: CircularProgressIndicator());
+                            },
+                            firstPageProgressIndicatorBuilder: (context) {
+                              return const Center(child: CircularProgressIndicator());
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
         ),
       ),
     );
@@ -185,8 +209,7 @@ Future<List<String>?> bs({
                 builder: (context, state) {
                   return state.when(
                     initial: () => const SizedBox(),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: CircularProgressIndicator()),
                     failure: (message) => Center(child: Text(message)),
                     success: (data) {
                       return Container(
@@ -203,8 +226,7 @@ Future<List<String>?> bs({
                                     (e) {
                                       return ChoiceChip(
                                         label: Text(e),
-                                        selected:
-                                            selectedChoices.value.contains(e),
+                                        selected: selectedChoices.value.contains(e),
                                         onSelected: (_) => onSelected(e),
                                       );
                                     },
@@ -220,8 +242,7 @@ Future<List<String>?> bs({
                 },
               ),
               ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pop(context, selectedChoices.value),
+                  onPressed: () => Navigator.pop(context, selectedChoices.value),
                   child: const Text('Submit')),
             ],
           ),

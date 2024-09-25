@@ -65,10 +65,9 @@ class BrowseSeriesWidget extends StatelessWidget {
                         ),
                         child: Text(
                           e,
-                          style:
-                              Theme.of(context).textTheme.labelMedium!.copyWith(
-                                    color: Colors.white,
-                                  ),
+                          style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                                color: Colors.white,
+                              ),
                         ),
                       );
                     }).toList(),
@@ -114,13 +113,13 @@ class CoverImage extends StatelessWidget {
           Positioned(
             child: Container(
               height: 25,
-              width: 25,
+              width: kToolbarHeight,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Colors.amber,
-                shape: BoxShape.circle,
+              decoration: const BoxDecoration(color: Colors.black54),
+              child: Text(
+                '😊 $averageScore%',
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(color: Colors.white),
               ),
-              child: Text('$averageScore'),
             ),
           ),
           Positioned(
